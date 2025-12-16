@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>行动打卡系统</title>
+<style>
+  body { max-width: 700px; margin: 40px auto; font-family: system-ui; background: #f5f5f5; }
+  .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .task { display: flex; align-items: center; padding: 12px; margin: 8px 0; background: #f9f9f9; border-radius: 8px; }
+  .task input { margin-right: 12px; transform: scale(1.3); }
+  .task.done { opacity: 0.5; text-decoration: line-through; }
+  button { width: 100%; padding: 16px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; }
+  .btn-primary { background: #4CAF50; color: white; }
+  .btn-primary:disabled { background: #ccc; }
+  .reward { padding: 12px; margin: 8px 0; background: #e3f2fd; border-radius: 8px; }
+  .reward.unlocked { background: #c8e6c9; font-weight: bold; }
+  .settings { display: none; margin-top: 20px; }
+  textarea { width: 100%; height: 100px; margin: 8px 0; }
+  .streak-info { background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+  
+  /* 日历样式 */
+  .calendar { margin-bottom: 20px; }
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .calendar-day { 
+    aspect-ratio: 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 8px; 
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+  }
+  .calendar-day.empty { background: transparent; }
+  .calendar-day.today { border: 2px solid #2196F3; }
+  .calendar-day.checked { background: #4CAF50; color: white; }
+  .calendar-day.checked.old-version { background: #81C784; } /* 旧版本的颜色 */
+  .calendar-day.checked.current-version { background: #4CAF50; } /* 当前版本的颜色 */
+  .calendar-day-label { font-size: 11px; margin-top: 2px; }
+  
+  /* 统计信息 */
+  .stats-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px; 
+    margin-top: 15px;
+  }
+  .stat-box { 
+    background: #f8f9fa; 
+    padding: 10px; 
+    border-radius: 8px; 
+    text-align: center;
+  }
+  .stat-value { 
+    font-size: 24px; 
+    font-weight: bold; 
+    color: #2196F3;
+  }
+  .stat-label { 
+    font-size: 12px; 
+    color: #666;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>📅 行动打卡系统</h2>
+  <div class="streak-info">
+    <p>连续天数：<strong id="streak">0</strong>天 | 今日：<strong id="score">0</strong>分 | 总积分：<strong id="totalScore">0</strong></p>
+    <p style="font-size: 12px; color: #666; margin-top: 5px;" id="lastCheckIn"></p>
+  </div>
+  
+  <!-- 日历面板 -->
+  <div class="calendar">
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)" style="width: auto; padding: 5px 10px; font-size: 14px;">◀</button>
+      <h3 id="currentMonth">2023年12月</h3>
+      <button onclick="changeMonth(1)" style="width: auto; padding: 5px 10px; font-size: 14px;">▶</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- 日历将通过JS动态生成 -->
+    </div>
+    <div style="display: flex; justify-content: center; margin-top: 10px; font-size: 12px; color: #666;">
+      <div style="display: flex; align-items: center; margin-right: 15px;">
+        <div style="width: 15px; height: 15px; background: #4CAF50; border-radius: 3px; margin-right: 5px;"></div>
+        <span>当前版本打卡</span>
+      </div>
+      <div style="display: flex; align-items: center;">
+        <div style="width: 15px; height: 15px; background: #81C784; border-radius: 3px; margin-right: 5px;"></div>
+        <span>旧版本打卡</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-value" id="monthChecked">0</div>
+      <div class="stat-label">本月打卡</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="weekChecked">0</div>
+      <div class="stat-label">本周打卡</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="completionRate">0%</div>
+      <div class="stat-label">完成率</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>📝 今日任务</h3>
+  <div id="taskList"></div>
+  <button class="btn-primary" id="checkInBtn" onclick="checkIn()">🎯 今日打卡</button>
+  <p style="font-size: 12px; color: #666; margin-top: 10px;">完成≥3项=60分，全部完成=100分</p>
+</div>
+
+<div class="card">
+  <h3>🎁 奖励进度</h3>
+  <div id="rewardList"></div>
+</div>
+
+<div class="card">
+  <button onclick="toggleSettings()" style="background: #2196F3; color: white; padding: 10px;">⚙️ 编辑任务/奖励</button>
+  <div class="settings" id="settings">
+    <h4>任务列表（每行一个）</h4>
+    <textarea id="taskInput">跑步（不计量）
+单词+听力（不计量）
+数学汤家凤（不计量）
+期末两门课复习（不计量）
+无氧运动</textarea>
+    <h4>奖励设置（格式：天数-描述）</h4>
+    <textarea id="rewardInput">3-奖励1小时娱乐
+7-奖励大餐50元
+14-小礼物100元
+30-心意大件300元</textarea>
+    <div style="margin-top: 15px;">
+      <button onclick="saveSettings()" style="background: #ff9800; color: white; margin-right: 10px;">保存设置</button>
+      <button onclick="resetData()" style="background: #f44336; color: white;">重置数据</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 默认数据
+const defaultTasks = ["跑步（不计量）","单词+听力（不计量）","数学汤家凤（不计量）","期末两门课复习（不计量）","无氧运动"];
+const defaultRewards = [
+  {day: 3, desc: "奖励1小时娱乐"},
+  {day: 7, desc: "奖励大餐50元"},
+  {day: 14, desc: "小礼物100元"},
+  {day: 30, desc: "心意大件300元"}
+];
+
+// 当前查看的月份
+let currentViewDate = new Date();
+currentViewDate.setDate(1); // 设为当月第一天
+
+// 加载数据
+function loadData() {
+  const saved = localStorage.getItem('checkinData');
+  if (!saved) {
+    return {
+      tasks: defaultTasks.map(t => ({name: t, done: false})),
+      rewards: defaultRewards.map(r => ({...r, claimed: false})),
+      streak: 0,
+      lastCheckIn: null,
+      todayChecked: false,
+      totalScore: 0,
+      history: [], // 新增：历史记录
+      taskVersion: generateTaskVersion(defaultTasks) // 当前任务版本
+    };
+  }
+  
+  const data = JSON.parse(saved);
+  
+  // 确保数据结构完整性
+  if (!data.totalScore) data.totalScore = 0;
+  if (!data.history) data.history = [];
+  if (!data.taskVersion) data.taskVersion = generateTaskVersion(data.tasks || defaultTasks);
+  
+  // 检查是否是昨天打卡的
+  const today = new Date().toDateString();
+  if (data.lastCheckIn && data.lastCheckIn !== today) {
+    // 如果是昨天打卡的，保持连续天数，重置今日状态
+    if (isYesterday(data.lastCheckIn)) {
+      data.todayChecked = false;
+      data.tasks.forEach(t => t.done = false);
+    } else if (!isToday(data.lastCheckIn)) {
+      // 如果不是昨天也不是今天，中断连续天数
+      data.streak = 0;
+      data.todayChecked = false;
+      data.tasks.forEach(t => t.done = false);
+    }
+  }
+  
+  return data;
+}
+
+// 保存数据
+function saveData(data) {
+  localStorage.setItem('checkinData', JSON.stringify(data));
+}
+
+// 生成任务版本标识
+function generateTaskVersion(tasks) {
+  const taskString = tasks.map(t => typeof t === 'object' ? t.name : t).join('|');
+  // 简单的哈希函数
+  let hash = 0;
+  for (let i = 0; i < taskString.length; i++) {
+    hash = ((hash << 5) - hash) + taskString.charCodeAt(i);
+    hash |= 0; // 转换为32位整数
+  }
+  return hash.toString(16); // 转换为16进制
+}
+
+// 检查是否为昨天
+function isYesterday(dateString) {
+  const date = new Date(dateString);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return date.toDateString() === yesterday.toDateString();
+}
+
+// 检查是否为今天
+function isToday(dateString) {
+  return new Date(dateString).toDateString() === new Date().toDateString();
+}
+
+// 渲染所有
+function renderAll() {
+  renderCalendar();
+  renderTasks();
+  renderRewards();
+  updateStreakInfo();
+  updateStats();
+}
+
+// 渲染日历
+function renderCalendar() {
+  const data = loadData();
+  const calendarGrid = document.getElementById('calendarGrid');
+  const currentMonthEl = document.getElementById('currentMonth');
+  
+  // 设置月份标题
+  const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+  const year = currentViewDate.getFullYear();
+  const month = currentViewDate.getMonth();
+  currentMonthEl.textContent = `${year}年${monthNames[month]}`;
+  
+  // 清空日历
+  calendarGrid.innerHTML = '';
+  
+  // 添加星期标题
+  const weekDays = ["日", "一", "二", "三", "四", "五", "六"];
+  weekDays.forEach(day => {
+    const dayEl = document.createElement('div');
+    dayEl.className = 'calendar-day';
+    dayEl.innerHTML = `<div style="font-weight: bold;">${day}</div>`;
+    calendarGrid.appendChild(dayEl);
+  });
+  
+  // 获取当月第一天是星期几
+  const firstDay = new Date(year, month, 1);
+  const firstDayWeekday = firstDay.getDay(); // 0是星期日
+  
+  // 添加空白格子
+  for (let i = 0; i < firstDayWeekday; i++) {
+    const emptyDay = document.createElement('div');
+    emptyDay.className = 'calendar-day empty';
+    calendarGrid.appendChild(emptyDay);
+  }
+  
+  // 获取当月天数
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const today = new Date();
+  
+  // 获取历史记录中的打卡数据
+  const historyByDate = {};
+  data.history.forEach(record => {
+    historyByDate[record.date] = record;
+  });
+  
+  // 获取当前任务版本
+  const currentTaskVersion = data.taskVersion;
+  
+  // 添加日期格子
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dateString = date.toDateString();
+    const dateKey = formatDate(date);
+    
+    const dayEl = document.createElement('div');
+    dayEl.className = 'calendar-day';
+    
+    // 检查是否是今天
+    if (date.toDateString() === today.toDateString()) {
+      dayEl.classList.add('today');
+    }
+    
+    // 检查是否有打卡记录
+    if (historyByDate[dateKey]) {
+      const record = historyByDate[dateKey];
+      dayEl.classList.add('checked');
+      
+      // 根据任务版本决定颜色
+      if (record.taskVersion === currentTaskVersion) {
+        dayEl.classList.add('current-version');
+      } else {
+        dayEl.classList.add('old-version');
+      }
+      
+      // 添加分数提示
+      dayEl.title = `打卡日期: ${dateKey}\n得分: ${record.score}分`;
+    }
+    
+    dayEl.innerHTML = `
+      <div>${day}</div>
+      <div class="calendar-day-label">${date.getDate() === 1 ? monthNames[month] : ''}</div>
+    `;
+    
+    // 点击查看详情
+    dayEl.onclick = () => {
+      if (historyByDate[dateKey]) {
+        const record = historyByDate[dateKey];
+        alert(`📅 ${dateKey}\n得分: ${record.score}分\n任务版本: ${record.taskVersion === currentTaskVersion ? '当前版本' : '旧版本'}`);
+      } else {
+        alert(`📅 ${dateKey}\n未打卡`);
+      }
+    };
+    
+    calendarGrid.appendChild(dayEl);
+  }
+}
+
+// 格式化日期为 YYYY-MM-DD
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 切换月份
+function changeMonth(delta) {
+  currentViewDate.setMonth(currentViewDate.getMonth() + delta);
+  renderCalendar();
+  updateStats();
+}
+
+// 更新统计信息
+function updateStats() {
+  const data = loadData();
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  // 本月打卡天数
+  const monthChecked = data.history.filter(record => {
+    const recordDate = new Date(record.date);
+    return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+  }).length;
+  
+  // 本周打卡天数（周一开始）
+  const weekChecked = data.history.filter(record => {
+    const recordDate = new Date(record.date);
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1); // 周一
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // 周日
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return recordDate >= startOfWeek && recordDate <= endOfWeek;
+  }).length;
+  
+  // 本月完成率（本月已过天数中打卡的比例）
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysPassed = Math.min(today.getDate(), daysInMonth);
+  const completionRate = daysPassed > 0 ? Math.round((monthChecked / daysPassed) * 100) : 0;
+  
+  document.getElementById('monthChecked').textContent = monthChecked;
+  document.getElementById('weekChecked').textContent = weekChecked;
+  document.getElementById('completionRate').textContent = `${completionRate}%`;
+  document.getElementById('totalScore').textContent = data.totalScore;
+}
+
+// 渲染任务
+function renderTasks() {
+  const data = loadData();
+  const list = document.getElementById('taskList');
+  
+  list.innerHTML = data.tasks.map((task, i) => `
+    <div class="task ${task.done ? 'done' : ''}">
+      <input type="checkbox" ${task.done ? 'checked' : ''} 
+             ${data.todayChecked ? 'disabled' : ''}
+             onchange="toggleTask(${i})" id="task${i}">
+      <label for="task${i}">${task.name}</label>
+    </div>
+  `).join('');
+  
+  updateScore();
+}
+
+// 切换任务状态
+function toggleTask(index) {
+  const data = loadData();
+  if (!data.todayChecked) {
+    data.tasks[index].done = !data.tasks[index].done;
+    saveData(data);
+    renderTasks();
+  }
+}
+
+// 计算分数
+function updateScore() {
+  const data = loadData();
+  const doneCount = data.tasks.filter(t => t.done).length;
+  const score = doneCount >= 3 ? (doneCount === data.tasks.length ? 100 : 60) : 0;
+  document.getElementById('score').textContent = score;
+  
+  const btn = document.getElementById('checkInBtn');
+  if (data.todayChecked) {
+    btn.disabled = true;
+    btn.textContent = '今日已打卡';
+  } else if (doneCount < 3) {
+    btn.disabled = true;
+    btn.textContent = `还需完成${3-doneCount}项才能打卡`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = '🎯 今日打卡';
+  }
+}
+
+// 更新连续天数信息
+function updateStreakInfo() {
+  const data = loadData();
+  document.getElementById('streak').textContent = data.streak;
+  
+  const lastCheckInEl = document.getElementById('lastCheckIn');
+  if (data.lastCheckIn) {
+    const lastDate = new Date(data.lastCheckIn);
+    const today = new Date();
+    const diffTime = today - lastDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      lastCheckInEl.textContent = `上次打卡：今天`;
+    } else if (diffDays === 1) {
+      lastCheckInEl.textContent = `上次打卡：昨天`;
+    } else {
+      lastCheckInEl.textContent = `上次打卡：${diffDays}天前`;
+    }
+  } else {
+    lastCheckInEl.textContent = '还未开始打卡';
+  }
+}
+
+// 打卡
+function checkIn() {
+  const data = loadData();
+  const today = new Date();
+  const todayString = today.toDateString();
+  const dateKey = formatDate(today);
+  
+  if (data.todayChecked) {
+    alert('今天已经打过卡了！');
+    return;
+  }
+  
+  // 计算连续天数
+  if (data.lastCheckIn) {
+    const lastDate = new Date(data.lastCheckIn);
+    const diffTime = today - lastDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      data.streak++;
+    } else if (diffDays > 1) {
+      data.streak = 1;
+    }
+  } else {
+    data.streak = 1;
+  }
+  
+  // 计算今日得分
+  const doneCount = data.tasks.filter(t => t.done).length;
+  const todayScore = doneCount >= 3 ? (doneCount === data.tasks.length ? 100 : 60) : 0;
+  
+  // 记录历史
+  const historyRecord = {
+    date: dateKey,
+    score: todayScore,
+    taskVersion: data.taskVersion,
+    tasks: data.tasks.map(t => ({name: t.name, done: t.done}))
+  };
+  
+  // 添加或更新历史记录
+  const existingIndex = data.history.findIndex(record => record.date === dateKey);
+  if (existingIndex >= 0) {
+    data.history[existingIndex] = historyRecord;
+  } else {
+    data.history.push(historyRecord);
+  }
+  
+  data.lastCheckIn = todayString;
+  data.todayChecked = true;
+  data.totalScore += todayScore;
+  
+  saveData(data);
+  
+  // 检查奖励
+  checkRewards();
+  
+  renderAll();
+  
+  // 显示打卡结果
+  let message = `🎉 打卡成功！\n连续天数：${data.streak}天`;
+  if (todayScore === 100) {
+    message += '\n🎊 太棒了！完成所有任务！';
+  } else if (todayScore === 60) {
+    message += '\n👍 完成基础目标！';
+  }
+  alert(message);
+}
+
+// 检查奖励
+function checkRewards() {
+  const data = loadData();
+  let newRewards = [];
+  
+  data.rewards.forEach(r => {
+    if (data.streak >= r.day && !r.claimed) {
+      r.claimed = true;
+      newRewards.push(r);
+    }
+  });
+  
+  if (newRewards.length > 0) {
+    saveData(data);
+    let message = '🎁 恭喜获得新奖励！\n';
+    newRewards.forEach(r => {
+      message += `\n坚持${r.day}天：${r.desc}`;
+    });
+    setTimeout(() => alert(message), 300);
+  }
+}
+
+// 渲染奖励
+function renderRewards() {
+  const data = loadData();
+  const list = document.getElementById('rewardList');
+  
+  list.innerHTML = data.rewards.map(r => {
+    const unlocked = data.streak >= r.day;
+    const claimed = r.claimed;
+    
+    return `
+      <div class="reward ${unlocked ? 'unlocked' : ''}">
+        <div style="display: flex; justify-content: space-between;">
+          <span>${r.desc}</span>
+          <span style="font-size: 14px; color: ${unlocked ? '#388e3c' : '#757575'}">
+            ${unlocked ? '✅ 已达成' : `需坚持${r.day}天`}
+          </span>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+          当前进度：${data.streak}/${r.day}天
+          ${claimed ? '（已领取）' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 切换设置面板
+function toggleSettings() {
+  const settings = document.getElementById('settings');
+  settings.style.display = settings.style.display === 'block' ? 'none' : 'block';
+  
+  if (settings.style.display === 'block') {
+    const data = loadData();
+    document.getElementById('taskInput').value = data.tasks.map(t => t.name).join('\n');
+    document.getElementById('rewardInput').value = data.rewards.map(r => `${r.day}-${r.desc}`).join('\n');
+  }
+}
+
+// 保存设置
+function saveSettings() {
+  const taskInput = document.getElementById('taskInput').value;
+  const rewardInput = document.getElementById('rewardInput').value;
+  
+  const tasks = taskInput.split('\n').filter(t => t.trim()).map(name => ({
+    name: name.trim(),
+    done: false
+  }));
+  
+  const rewards = rewardInput.split('\n')
+    .filter(r => r.trim())
+    .map(line => {
+      const match = line.match(/^(\d+)\s*-\s*(.+)$/);
+      if (match) {
+        return {
+          day: parseInt(match[1]),
+          desc: match[2].trim(),
+          claimed: false
+        };
+      }
+      return null;
+    })
+    .filter(r => r !== null)
+    .sort((a, b) => a.day - b.day);
+  
+  const data = loadData();
+  const oldTaskVersion = data.taskVersion;
+  data.tasks = tasks;
+  data.rewards = rewards;
+  data.taskVersion = generateTaskVersion(tasks);
+  
+  // 保留已解锁的奖励状态s
+  rewards.forEach(r => {
+    const oldReward = data.rewards.find(old => old.day === r.day);
+    if (oldReward && oldReward.claimed && data.streak >= r.day) {
+      r.claimed = true;
+    }
+  });
+  
+  // 更新历史记录中的任务版本信息
+  data.history.forEach(record => {
+    if (record.taskVersion === oldTaskVersion) {
+      record.taskVersion = data.taskVersion;
+    }
+  });
+  
+  saveData(data);
+  renderAll();
+  toggleSettings();
+  alert('设置已保存！\n注意：任务版本已更新，历史打卡记录将使用新颜色显示。');
+}
+
+// 重置数据
+function resetData() {
+  if (confirm('确定要重置所有数据吗？这将清除所有打卡记录和进度！')) {
+    localStorage.removeItem('checkinData');
+    currentViewDate = new Date();
+    currentViewDate.setDate(1);
+    renderAll();
+    alert('数据已重置！');
+  }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+  renderAll();
+});
+</script>
+</body>
+</html>
