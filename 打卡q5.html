@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>成长打卡系统</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border-radius: 16px;
+            --box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 10px;
+            min-height: 100vh;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-title::before {
+            content: "🎯";
+            font-size: 1.6rem;
+        }
+        
+        .toggle-btn {
+            background: rgba(67, 97, 238, 0.1);
+            border: 1px solid rgba(67, 97, 238, 0.3);
+            color: var(--primary);
+            border-radius: 12px;
+            padding: 6px 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(67, 97, 238, 0.2);
+        }
+        
+        .toggle-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .settings-section {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: var(--border-radius);
+            border: 1px solid #e0e6ff;
+        }
+        
+        .settings-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .config-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+        }
+        
+        .config-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .config-title::before {
+            content: "⚙️";
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            resize: vertical;
+            background: #fafaff;
+            transition: var(--transition);
+        }
+        
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        
+        .task {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9fbfd;
+            border-radius: 14px;
+            transition: var(--transition);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .task:hover {
+            background: #f0f7ff;
+            transform: translateX(3px);
+        }
+        
+        .task-checkbox {
+            width: 26px;
+            height: 26px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+        
+        .task-checkbox.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .task-checkbox.checked::after {
+            content: "✓";
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .task-name {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .task-desc {
+            font-size: 0.95rem;
+            color: var(--gray);
+            line-height: 1.4;
+        }
+        
+        .score-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .score-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .streak-info {
+            background: rgba(67, 97, 238, 0.08);
+            border-radius: 14px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .streak-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 5px 0;
+            text-shadow: 0 2px 4px rgba(67, 97, 238, 0.2);
+        }
+        
+        .score-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+        }
+        
+        .score-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        .score-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        .action-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+            letter-spacing: 0.5px;
+        }
+        
+        .action-btn:disabled {
+            background: linear-gradient(135deg, #adb5bd, #6c757d);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.6);
+        }
+        
+        .action-btn.warning {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        }
+        
+        .action-btn.success {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+        
+        .calendar {
+            margin-top: 20px;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        
+        .calendar-day-label {
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 6px 0;
+            font-weight: 600;
+            color: var(--gray);
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            position: relative;
+            transition: var(--transition);
+            margin: 2px;
+        }
+        
+        .calendar-day.today {
+            background: rgba(67, 97, 238, 0.15);
+            border: 2px solid var(--primary);
+            font-weight: 700;
+        }
+        
+        .calendar-day.checked {
+            background: rgba(76, 201, 240, 0.2);
+            color: var(--success);
+        }
+        
+        .calendar-day.reward {
+            background: rgba(247, 37, 133, 0.2);
+            color: var(--warning);
+            position: relative;
+        }
+        
+        .calendar-day.reward::after {
+            content: "🎁";
+            position: absolute;
+            font-size: 10px;
+            bottom: 2px;
+            right: 2px;
+        }
+        
+        .calendar-day.skipped {
+            background: rgba(108, 117, 125, 0.2);
+            text-decoration: line-through;
+            color: var(--gray);
+        }
+        
+        .calendar-day.skipped::after {
+            content: "✓";
+            position: absolute;
+            font-size: 12px;
+            color: var(--success);
+        }
+        
+        .rewards-panel {
+            margin-top: 20px;
+        }
+        
+        .reward-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 14px;
+            background: #f8f9fa;
+            border-left: 3px solid var(--warning);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .reward-info {
+            flex: 1;
+        }
+        
+        .reward-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .reward-cost {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--warning);
+            text-align: right;
+            min-width: 80px;
+        }
+        
+        .backup-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .backup-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .backup-btn.export {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+        
+        .backup-btn.import {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+        
+        .backup-btn.reset {
+            background: rgba(247, 37, 133, 0.1);
+            color: var(--warning);
+        }
+        
+        .warning {
+            background: rgba(255, 243, 205, 0.5);
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .version-info {
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .modal-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-align: center;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            margin: 10px 0;
+            transition: var(--transition);
+        }
+        
+        .modal-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .modal-btn.cancel {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .modal-btn.confirm {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* 手机端优化 */
+        @media (max-width: 480px) {
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+            
+            .task {
+                padding: 12px;
+            }
+            
+            .task-name {
+                font-size: 1.05rem;
+            }
+            
+            .action-btn {
+                padding: 14px;
+                font-size: 1.2rem;
+            }
+            
+            .score-value {
+                font-size: 1.6rem;
+            }
+            
+            .streak-value {
+                font-size: 2.0rem;
+            }
+            
+            .calendar-day {
+                font-size: 13px;
+            }
+            
+            .modal-content {
+                padding: 20px 15px;
+            }
+            
+            .modal-title {
+                font-size: 1.4rem;
+            }
+            
+            .modal-input {
+                padding: 12px;
+                font-size: 1rem;
+            }
+            
+            .modal-btn {
+                padding: 12px;
+                font-size: 1rem;
+            }
+        }
+        
+        /* 动画效果 */
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(67, 97, 238, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">成长打卡系统</div>
+            <button class="toggle-btn" id="toggleSettings">展开设置</button>
+        </div>
+        
+        <div class="streak-info">
+            <div class="streak-value" id="streak">0</div>
+            <div>连续打卡天数</div>
+        </div>
+        
+        <div class="score-display">
+            <div class="score-item">
+                <div class="score-value" id="todayScore">0</div>
+                <div class="score-label">今日得分</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value" id="totalScore">0</div>
+                <div class="score-label">总积分</div>
+            </div>
+        </div>
+        
+        <div class="score-bar">
+            <div class="score-progress" id="scoreProgress" style="width: 0%"></div>
+        </div>
+        
+        <div id="taskList">
+            <!-- 任务将通过JS动态生成 -->
+        </div>
+        
+        <button class="action-btn pulse" id="checkInBtn">🎯 今日打卡</button>
+        
+        <div class="rewards-panel">
+            <div class="config-title">🎁 积分商城</div>
+            <div id="rewardsList">
+                <!-- 奖励商品将通过JS动态生成 -->
+            </div>
+            <button class="action-btn success" id="useRewardBtn" disabled>兑换商品</button>
+        </div>
+        
+        <div class="settings-section" id="settingsSection">
+            <div class="warning">
+                ⚠️ <strong>重要提示：</strong> 修改配置后点击"保存配置"生效。历史记录会保留，但使用新规则的日期会用不同颜色区分。
+            </div>
+            
+            <div class="config-group">
+                <div class="config-title">📝 每日任务设置</div>
+                <p style="color: var(--gray); font-size: 0.95rem; margin-bottom: 8px;">
+                    每行一个任务，格式：<strong>任务名称|描述</strong>（描述可选）
+                </p>
+                <textarea id="tasksConfig" placeholder="数学学习|专注学习，不计量时长
+单词听力|接触英语，不计量数量
+期末复习|复习重点，不计量页数
+无氧运动|适当锻炼，不计量强度
+早起|自然醒来，不计量时间">数学学习|专注学习，不计量时长
+单词听力|接触英语，不计量数量
+期末复习|复习重点，不计量页数
+无氧运动|适当锻炼，不计量强度
+早起|自然醒来，不计量时间</textarea>
+            </div>
+            
+            <div class="config-group">
+                <div class="config-title">📊 积分规则设置</div>
+                <p style="color: var(--gray); font-size: 0.95rem; margin-bottom: 8px;">
+                    每天总分为<span style="color: var(--primary); font-weight: 700;">100分</span>，根据完成任务数平均分配<br>
+                    最低打卡分数：<input type="number" id="minScoreForCheckin" value="60" min="1" max="100" style="width: 60px; padding: 4px; border-radius: 6px; border: 1px solid #ddd;">分
+                </p>
+            </div>
+            
+            <div class="config-group">
+                <div class="config-title">🎁 奖励商品设置</div>
+                <p style="color: var(--gray); font-size: 0.95rem; margin-bottom: 8px;">
+                    格式：<strong>商品名称|所需积分|效果描述</strong>
+                </p>
+                <textarea id="rewardsConfig" placeholder="休息一天|1000|跳过今日打卡，不中断连续记录
+小娱乐|500|1小时自由娱乐时间
+美食奖励|800|50元美食预算
+学习资料|1500|购买学习相关资料">休息一天|1000|跳过今日打卡，不中断连续记录
+小娱乐|500|1小时自由娱乐时间
+美食奖励|800|50元美食预算
+学习资料|1500|购买学习相关资料</textarea>
+            </div>
+            
+            <div class="config-group">
+                <div class="config-title">⚠️ 惩罚规则设置</div>
+                <p style="color: var(--gray); font-size: 0.95rem; margin-bottom: 8px;">
+                    格式：<strong>缺席天数|扣除积分|惩罚描述</strong>
+                </p>
+                <textarea id="punishmentsConfig" placeholder="1|-100|一天未打卡
+2|-200|两天未打卡
+3|-400|三天未打卡，连续记录中断">1|-100|一天未打卡
+2|-200|两天未打卡
+3|-400|三天未打卡，连续记录中断</textarea>
+            </div>
+            
+            <button class="action-btn" id="saveConfigBtn" style="margin-top: 15px;">💾 保存所有配置</button>
+        </div>
+    </div>
+    
+    <div class="card calendar">
+        <div class="card-header">
+            <div class="card-title">📅 打卡日历</div>
+            <div>
+                <button class="toggle-btn" id="prevMonth" style="margin-right: 8px;">❮</button>
+                <button class="toggle-btn" id="nextMonth">❯</button>
+            </div>
+        </div>
+        <div id="monthYear" style="text-align: center; font-weight: 600; margin: 10px 0; color: var(--primary);"></div>
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- 日历将通过JS动态生成 -->
+        </div>
+        <div style="display: flex; justify-content: space-around; margin-top: 15px; font-size: 0.9rem;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 16px; height: 16px; background: rgba(76, 201, 240, 0.3); border-radius: 4px;"></div>
+                <span>已打卡</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 16px; height: 16px; background: rgba(247, 37, 133, 0.3); border-radius: 4px; position: relative;">
+                    <span style="position: absolute; font-size: 8px; bottom: -2px; right: -2px;">🎁</span>
+                </div>
+                <span>奖励日</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 16px; height: 16px; background: rgba(108, 117, 125, 0.3); border-radius: 4px; text-decoration: line-through;"></div>
+                <span>跳过</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">💾 数据管理</div>
+        </div>
+        
+        <div class="backup-buttons">
+            <button class="backup-btn export" onclick="exportData()">导出数据</button>
+            <button class="backup-btn import" onclick="importData()">导入数据</button>
+            <button class="backup-btn reset" onclick="resetData()">重置数据</button>
+        </div>
+        
+        <button class="action-btn warning" id="adjustPointsBtn" style="margin-top: 15px;">
+            ✏️ 手动调整积分
+        </button>
+        
+        <div class="warning">
+            🔑 <strong>升级提示：</strong> 未来升级代码时，<strong>先导出数据</strong>，升级后再导入，可确保所有记录和配置不丢失。
+        </div>
+        
+        <div class="version-info">
+            当前版本: <span id="dataVersion">3.0</span> | 
+            任务版本: <span id="taskVersion">v1</span> | 
+            最后备份: <span id="lastBackup">从未</span>
+        </div>
+    </div>
+    
+    <!-- 积分调整模态框 -->
+    <div class="modal" id="adjustPointsModal">
+        <div class="modal-content">
+            <div class="modal-title">✏️ 调整积分</div>
+            <input type="number" class="modal-input" id="pointsAdjustment" placeholder="输入积分变化 (正数增加，负数减少)">
+            <div style="color: var(--gray); font-size: 0.95rem; margin: 8px 0; text-align: center;">
+                当前总积分: <span id="currentTotalPoints">0</span>
+            </div>
+            <textarea class="modal-input" id="adjustmentReason" placeholder="请输入调整原因 (例如: 兑换休息一天、手动修正等)" style="min-height: 80px; resize: vertical;"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="cancelAdjustment">取消</button>
+                <button class="modal-btn confirm" id="confirmAdjustment">确认调整</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 兑换确认模态框 -->
+    <div class="modal" id="redeemModal">
+        <div class="modal-content">
+            <div class="modal-title">🎁 兑换商品</div>
+            <div style="text-align: center; margin: 15px 0; font-size: 1.2rem; font-weight: 700;">
+                选择商品: <span id="selectedRewardName">休息一天</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin: 15px 0;">
+                <div style="font-weight: 600; color: var(--dark); margin-bottom: 8px;">效果说明:</div>
+                <div id="rewardEffect" style="color: var(--gray); line-height: 1.5;">
+                    跳过今日打卡，不中断连续记录
+                </div>
+            </div>
+            <div style="text-align: center; font-weight: 700; font-size: 1.3rem; color: var(--warning); margin: 15px 0;">
+                所需积分: <span id="rewardCost">1000</span>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="cancelRedeem">取消</button>
+                <button class="modal-btn confirm" id="confirmRedeem" style="background: var(--warning);">确认兑换</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============== 系统核心配置 ===============
+        // 【升级注意事项 - 重要】
+        // 1. 此对象包含系统核心数据结构，升级时必须保留
+        // 2. 新增字段应放在末尾，并设置默认值
+        // 3. 不要删除或重命名现有字段，以免数据丢失
+        // 4. 版本号升级规则：
+        //    - systemVersion: 功能重大变化时升级
+        //    - dataStructureVersion: 数据结构变化时升级
+        //    - configVersion: 配置格式变化时升级
+        const SYSTEM_META = {
+            systemVersion: "3.0",       // 系统功能版本
+            dataStructureVersion: "3.0", // 数据结构版本
+            configVersion: "2.0"        // 配置格式版本
+        };
+        
+        // 当前查看的月份
+        let currentViewDate = new Date();
+        
+        // =============== 数据加载与保存 ===============
+        // 【升级注意事项】
+        // 1. 此函数负责数据存储，升级时不应改变存储键名
+        // 2. 保持localStorage键名不变：'habitData'
+        // 3. 新增数据字段时，确保存储前进行兼容性处理
+        function loadData() {
+            const saved = localStorage.getItem('habitData');
+            
+            if (!saved) {
+                return createDefaultData();
+            }
+            
+            try {
+                const data = JSON.parse(saved);
+                return migrateData(data);
+            } catch (e) {
+                console.error("数据解析错误，使用默认数据", e);
+                return createDefaultData();
+            }
+        }
+        
+        // 【升级注意事项】
+        // 1. 创建默认数据结构，升级时可修改默认值
+        // 2. 不要删除现有字段，可添加新字段
+        function createDefaultData() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            return {
+                // 【元数据 - 关键升级点】
+                systemMeta: { ...SYSTEM_META },
+                
+                // 【个人资料】
+                userProfile: {
+                    name: "成长者",
+                    joinDate: today
+                },
+                
+                // 【任务配置】
+                tasks: [
+                    { name: "数学学习", desc: "专注学习，不计量时长", active: true },
+                    { name: "单词听力", desc: "接触英语，不计量数量", active: true },
+                    { name: "期末复习", desc: "复习重点，不计量页数", active: true },
+                    { name: "无氧运动", desc: "适当锻炼，不计量强度", active: true },
+                    { name: "早起", desc: "自然醒来，不计量时间", active: true }
+                ],
+                
+                // 【积分规则】
+                scoringRules: {
+                    totalPoints: 100,           // 每日总分
+                    minScoreForCheckin: 60,     // 最低打卡分数
+                    lastUpdated: today
+                },
+                
+                // 【奖励商品】
+                rewards: [
+                    { name: "休息一天", cost: 1000, effect: "跳过今日打卡，不中断连续记录", enabled: true },
+                    { name: "小娱乐", cost: 500, effect: "1小时自由娱乐时间", enabled: true },
+                    { name: "美食奖励", cost: 800, effect: "50元美食预算", enabled: true },
+                    { name: "学习资料", cost: 1500, effect: "购买学习相关资料", enabled: true }
+                ],
+                
+                // 【惩罚规则】
+                punishments: [
+                    { missedDays: 1, points: -100, desc: "一天未打卡" },
+                    { missedDays: 2, points: -200, desc: "两天未打卡" },
+                    { missedDays: 3, points: -400, desc: "三天未打卡，连续记录中断" }
+                ],
+                
+                // 【今日状态】
+                today: {
+                    date: today,
+                    completedTasks: [],
+                    score: 0,
+                    checkedIn: false,
+                    skipped: false,
+                    skipReason: ""
+                },
+                
+                // 【历史记录】
+                history: [],
+                
+                // 【统计数据】
+                stats: {
+                    streak: 0,           // 连续打卡天数
+                    totalScore: 0,       // 总积分
+                    lastCheckIn: null,   // 最后打卡日期
+                    lastResetDate: today // 最后重置日期
+                },
+                
+                // 【任务版本 - 关键字段】
+                taskVersion: "v1", // 用于区分历史记录的任务版本
+                
+                // 【调整记录】
+                adjustments: [], // 手动积分调整记录
+                
+                // 【备份信息】
+                lastBackupDate: null,
+                
+                // 【扩展字段 - 为未来升级预留】
+                extensions: {
+                    // 未来功能可添加在这里
+                    // 例如: aiSuggestions: [], learningTopics: []
+                }
+            };
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数负责数据迁移，处理旧版本数据
+        // 2. 每次升级时，添加新的迁移逻辑
+        // 3. 保留所有旧迁移逻辑，确保兼容所有历史版本
+        function migrateData(data) {
+            console.log("开始数据迁移...");
+            
+            // 【迁移规则1】如果数据没有systemMeta，它是v1.0
+            if (!data.systemMeta) {
+                console.log("迁移旧版数据 (v1.0)");
+                
+                // 创建元数据
+                data.systemMeta = {
+                    systemVersion: "1.0",
+                    dataStructureVersion: "1.0",
+                    configVersion: "1.0"
+                };
+                
+                // 迁移今日状态
+                if (!data.today) {
+                    data.today = {
+                        date: new Date().toISOString().split('T')[0],
+                        completedTasks: [],
+                        score: 0,
+                        checkedIn: data.todayChecked || false,
+                        skipped: false,
+                        skipReason: ""
+                    };
+                }
+                
+                // 迁移统计数据
+                if (!data.stats) {
+                    data.stats = {
+                        streak: data.streak || 0,
+                        totalScore: data.totalScore || 0,
+                        lastCheckIn: data.lastCheckIn,
+                        lastResetDate: data.lastResetDate || new Date().toISOString().split('T')[0]
+                    };
+                }
+                
+                // 添加缺失字段
+                if (!data.adjustments) data.adjustments = [];
+                if (!data.taskVersion) data.taskVersion = "v1";
+                if (!data.extensions) data.extensions = {};
+            }
+            
+            // 【迁移规则2】v1.0 到 v2.0 - 添加奖励和惩罚系统
+            if (data.systemMeta.dataStructureVersion === "1.0") {
+                console.log("迁移数据 v1.0 -> v2.0");
+                
+                if (!data.rewards) {
+                    data.rewards = [
+                        { name: "休息一天", cost: 1000, effect: "跳过今日打卡，不中断连续记录", enabled: true },
+                        { name: "小娱乐", cost: 500, effect: "1小时自由娱乐时间", enabled: true }
+                    ];
+                }
+                
+                if (!data.punishments) {
+                    data.punishments = [
+                        { missedDays: 1, points: -100, desc: "一天未打卡" },
+                        { missedDays: 2, points: -200, desc: "两天未打卡" }
+                    ];
+                }
+                
+                data.systemMeta.dataStructureVersion = "2.0";
+            }
+            
+            // 【迁移规则3】v2.0 到 v3.0 - 优化积分规则
+            if (data.systemMeta.dataStructureVersion === "2.0") {
+                console.log("迁移数据 v2.0 -> v3.0");
+                
+                if (!data.scoringRules) {
+                    data.scoringRules = {
+                        totalPoints: 100,
+                        minScoreForCheckin: 60,
+                        lastUpdated: new Date().toISOString().split('T')[0]
+                    };
+                }
+                
+                data.systemMeta.dataStructureVersion = "3.0";
+                data.systemMeta.systemVersion = "3.0";
+                data.systemMeta.configVersion = "2.0";
+            }
+            
+            // 【完整性检查】
+            ensureDataIntegrity(data);
+            return data;
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数确保数据完整性，升级时应更新
+        // 2. 添加新字段时，在此处设置默认值
+        // 3. 不要删除现有字段的验证逻辑
+        function ensureDataIntegrity(data) {
+            // 验证任务
+            if (!data.tasks || !Array.isArray(data.tasks)) {
+                data.tasks = createDefaultData().tasks;
+            }
+            
+            // 验证积分规则
+            if (!data.scoringRules) {
+                data.scoringRules = {
+                    totalPoints: 100,
+                    minScoreForCheckin: 60,
+                    lastUpdated: new Date().toISOString().split('T')[0]
+                };
+            }
+            
+            // 验证奖励
+            if (!data.rewards || !Array.isArray(data.rewards)) {
+                data.rewards = createDefaultData().rewards;
+            }
+            
+            // 验证惩罚
+            if (!data.punishments || !Array.isArray(data.punishments)) {
+                data.punishments = createDefaultData().punishments;
+            }
+            
+            // 验证今日状态
+            const today = new Date().toISOString().split('T')[0];
+            if (!data.today || data.today.date !== today) {
+                data.today = {
+                    date: today,
+                    completedTasks: [],
+                    score: 0,
+                    checkedIn: false,
+                    skipped: false,
+                    skipReason: ""
+                };
+            }
+            
+            // 验证统计数据
+            if (!data.stats) {
+                data.stats = {
+                    streak: 0,
+                    totalScore: 0,
+                    lastCheckIn: null,
+                    lastResetDate: today
+                };
+            }
+            
+            // 确保任务版本
+            if (!data.taskVersion) {
+                data.taskVersion = generateTaskVersion(data.tasks);
+            }
+            
+            // 确保调整记录
+            if (!data.adjustments) {
+                data.adjustments = [];
+            }
+            
+            // 确保扩展字段
+            if (!data.extensions) {
+                data.extensions = {};
+            }
+            
+            return data;
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数保存数据，不要修改存储键名
+        // 2. 升级时如需改变存储结构，先迁移数据再保存
+        // 3. 保持localStorage键名不变：'habitData'
+        function saveData(data) {
+            localStorage.setItem('habitData', JSON.stringify(data));
+        }
+
+
+        // =============== 任务与版本管理 ===============
+        // 【升级注意事项】
+        // 1. 此函数生成任务版本ID，用于区分不同任务配置
+        // 2. 算法变更会影响历史记录颜色区分，升级时慎重
+        // 3. 保持算法简单稳定，基于任务名称和数量
+        function generateTaskVersion(tasks) {
+            const taskNames = tasks.map(t => t.name).sort().join('|');
+            return 'v' + (taskNames.length * tasks.length).toString(36);
+        }
+        
+        // =============== 核心业务逻辑 ===============
+        // 【升级注意事项】
+        // 1. 此函数每日重置任务，关键功能
+        // 2. 逻辑不应改变：当日期变化时重置
+        // 3. 升级时如需修改重置逻辑，在此处调整
+        function resetDailyTasks() {
+            const data = loadData();
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 检查是否是新的一天
+            if (data.today.date !== today) {
+                console.log(`🔄 每日重置: ${data.today.date} -> ${today}`);
+                
+                // 保存昨日记录（如果已打卡）
+                if (data.today.checkedIn || data.today.skipped) {
+                    data.history.push({
+                        ...data.today,
+                        taskVersion: data.taskVersion,
+                        type: data.today.skipped ? 'skipped' : 'checked'
+                    });
+                }
+                
+                // 重置今日状态
+                data.today = {
+                    date: today,
+                    completedTasks: [],
+                    score: 0,
+                    checkedIn: false,
+                    skipped: false,
+                    skipReason: ""
+                };
+                
+                // 检查是否中断连续记录
+                if (data.stats.lastCheckIn) {
+                    const lastCheckInDate = new Date(data.stats.lastCheckIn);
+                    const todayDate = new Date(today);
+                    const diffDays = Math.floor((todayDate - lastCheckInDate) / (1000 * 60 * 60 * 24));
+                    
+                    // 应用惩罚（如果未打卡天数符合惩罚规则）
+                    if (diffDays > 1) {
+                        const punishment = data.punishments.find(p => p.missedDays === diffDays);
+                        if (punishment) {
+                            data.stats.totalScore += punishment.points;
+                            console.log(`⚠️ 应用惩罚: ${punishment.desc}, ${punishment.points}分`);
+                        }
+                    }
+                }
+                
+                // 保存并重新渲染
+                saveData(data);
+                renderAll();
+                return true;
+            }
+            return false;
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数处理任务切换，核心功能
+        // 2. 不要改变参数签名：toggleTask(index)
+        // 3. 业务规则通过配置实现，此处保持简单
+        function toggleTask(index) {
+            const data = loadData();
+            
+            if (data.today.checkedIn || data.today.skipped) return;
+            
+            const taskId = `task${index}`;
+            const taskIndex = data.today.completedTasks.indexOf(taskId);
+            
+            if (taskIndex > -1) {
+                data.today.completedTasks.splice(taskIndex, 1);
+            } else {
+                data.today.completedTasks.push(taskId);
+            }
+            
+            // 重新计算分数
+            updateTodayScore(data);
+            
+            saveData(data);
+            renderTasks();
+            updateScoreDisplay();
+            checkCheckinAvailability();
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数更新今日分数，独立逻辑便于升级
+        // 2. 基于任务完成比例计算，总分100分
+        function updateTodayScore(data) {
+            const completedCount = data.today.completedTasks.length;
+            const totalTasks = data.tasks.filter(t => t.active).length;
+            
+            if (totalTasks === 0) {
+                data.today.score = 0;
+                return;
+            }
+            
+            // 按比例计算分数
+            const score = Math.round((completedCount / totalTasks) * data.scoringRules.totalPoints);
+            data.today.score = score;
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数检查打卡按钮状态
+        function checkCheckinAvailability() {
+            const data = loadData();
+            const btn = document.getElementById('checkInBtn');
+            const useRewardBtn = document.getElementById('useRewardBtn');
+            
+            if (data.today.checkedIn) {
+                btn.disabled = true;
+                btn.textContent = '✅ 今日已打卡';
+                btn.classList.remove('pulse');
+            } else if (data.today.skipped) {
+                btn.disabled = true;
+                btn.textContent = `⏭️ 今日已跳过: ${data.today.skipReason}`;
+                btn.classList.remove('pulse');
+            } else if (data.today.score < data.scoringRules.minScoreForCheckin) {
+                btn.disabled = true;
+                btn.textContent = `还需 ${data.scoringRules.minScoreForCheckin - data.today.score} 分才能打卡`;
+                btn.classList.remove('pulse');
+            } else {
+                btn.disabled = false;
+                btn.textContent = '🎯 今日打卡';
+                btn.classList.add('pulse');
+            }
+            
+            // 检查奖励按钮状态
+            const hasAvailableRewards = data.rewards.some(r => 
+                r.enabled && data.stats.totalScore >= r.cost
+            );
+            useRewardBtn.disabled = !hasAvailableRewards || data.today.checkedIn || data.today.skipped;
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数处理今日打卡，核心业务
+        // 2. 包含连续天数、积分、历史记录更新
+        function completeToday() {
+            const data = loadData();
+            
+            if (data.today.checkedIn || data.today.skipped || 
+                data.today.score < data.scoringRules.minScoreForCheckin) {
+                return;
+            }
+            
+            // 更新连续天数
+            const today = new Date().toISOString().split('T')[0];
+            const lastCheckIn = data.stats.lastCheckIn ? new Date(data.stats.lastCheckIn) : null;
+            
+            if (lastCheckIn) {
+                const diffTime = new Date(today) - lastCheckIn;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    // 连续打卡
+                    data.stats.streak++;
+                } else if (diffDays > 1) {
+                    // 中断连续
+                    data.stats.streak = 1;
+                }
+                // 同一天不改变
+            } else {
+                // 首次打卡
+                data.stats.streak = 1;
+            }
+            
+            // 更新总积分
+            data.stats.totalScore += data.today.score;
+            
+            // 标记今日已打卡
+            data.today.checkedIn = true;
+            data.stats.lastCheckIn = today;
+            
+            // 保存
+            saveData(data);
+            
+            // 重新渲染
+            updateStreakInfo();
+            renderTasks();
+            updateScoreDisplay();
+            renderCalendar();
+            checkCheckinAvailability();
+            
+            showSuccessMessage(`✅ 打卡成功！\n获得 ${data.today.score} 分\n当前连续 ${data.stats.streak} 天`);
+        }
+        
+        // 【升级注意事项】
+        // 1. 此函数处理使用奖励，核心业务
+        function useReward(reward) {
+            const data = loadData();
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 检查积分是否足够
+            if (data.stats.totalScore < reward.cost) {
+                showWarningMessage('⚠️ 积分不足！', `需要 ${reward.cost} 积分，当前只有 ${data.stats.totalScore} 积分`);
+                return false;
+            }
+            
+            // 特殊处理：休息一天
+            if (reward.name === "休息一天") {
+                // 标记今日为跳过
+                data.today.skipped = true;
+                data.today.skipReason = "使用奖励: 休息一天";
+                data.today.checkedIn = true; // 也算作打卡，不中断连续记录
+                
+                // 更新连续天数（保持不变，因为跳过也算完成）
+                if (!data.stats.lastCheckIn) {
+                    data.stats.streak = 1;
+                }
+                
+                // 扣除积分
+                data.stats.totalScore -= reward.cost;
+                data.stats.lastCheckIn = today;
+                
+                // 记录调整
+                data.adjustments.push({
+                    date: today,
+                    type: "reward_use",
+                    points: -reward.cost,
+                    reason: `兑换奖励: ${reward.name}`,
+                    before: data.stats.totalScore + reward.cost,
+                    after: data.stats.totalScore
+                });
+                
+                // 保存
+                saveData(data);
+                
+                // 重新渲染
+                updateStreakInfo();
+                renderTasks();
+                updateScoreDisplay();
+                renderCalendar();
+                checkCheckinAvailability();
+                
+                showSuccessMessage(`🎉 奖励兑换成功！\n已跳过今日打卡\n扣除 ${reward.cost} 积分`);
+                return true;
+            }
+            
+            // 其他奖励类型（未来扩展）
+            data.stats.totalScore -= reward.cost;
+            data.adjustments.push({
+                date: today,
+                type: "reward_use",
+                points: -reward.cost,
+                reason: `兑换奖励: ${reward.name}`,
+                before: data.stats.totalScore + reward.cost,
+                after: data.stats.totalScore
+            });
+            
+            saveData(data);
+            updateScoreDisplay();
+            showSuccessMessage(`🎉 奖励兑换成功！\n${reward.effect}\n扣除 ${reward.cost} 积分`);
+            return true;
+        }
+        
+        // =============== UI渲染 ===============
+        function renderTasks() {
+            const data = loadData();
+            const container = document.getElementById('taskList');
+            
+            // 计算任务完成比例
+            const completedCount = data.today.completedTasks.length;
+            const totalTasks = data.tasks.filter(t => t.active).length;
+            const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+            
+            let html = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div class="config-title" style="margin: 0; font-size: 1.2rem;">✅ 今日任务 (${completedCount}/${totalTasks})</div>
+                    <div style="background: rgba(67, 97, 238, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-weight: 600;">
+                        ${completionRate}%
+                    </div>
+                </div>
+            `;
+            
+            data.tasks
+                .filter(task => task.active)
+                .forEach((task, index) => {
+                    const taskId = `task${index}`;
+                    const isChecked = data.today.completedTasks.includes(taskId);
+                    const isDisabled = data.today.checkedIn || data.today.skipped;
+                    
+                    html += `
+                        <div class="task ${isChecked ? 'completed' : ''}" 
+                             style="${isDisabled ? 'opacity: 0.7; pointer-events: none;' : ''}">
+                            <div class="task-checkbox ${isChecked ? 'checked' : ''}" 
+                                 data-index="${index}" 
+                                 style="cursor: ${isDisabled ? 'not-allowed' : 'pointer'};">
+                            </div>
+                            <div class="task-content">
+                                <div class="task-name">${task.name}</div>
+                                <div class="task-desc">${task.desc}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            
+            container.innerHTML = html;
+            
+            // 重新绑定任务点击事件
+            document.querySelectorAll('.task-checkbox').forEach(el => {
+                el.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    toggleTask(index);
+                });
+            });
+        }
+        
+        function updateScoreDisplay() {
+            const data = loadData();
+            document.getElementById('todayScore').textContent = data.today.score;
+            document.getElementById('totalScore').textContent = data.stats.totalScore;
+            
+            // 更新进度条
+            const progress = document.getElementById('scoreProgress');
+            const percent = Math.min(100, (data.today.score / data.scoringRules.totalPoints) * 100);
+            progress.style.width = `${percent}%`;
+            
+            // 根据分数改变颜色
+            if (data.today.score >= data.scoringRules.minScoreForCheckin) {
+                progress.style.background = 'linear-gradient(90deg, #4CAF50, #2e7d32)';
+            } else {
+                progress.style.background = 'linear-gradient(90deg, #ff9800, #f57c00)';
+            }
+        }
+        
+        function updateStreakInfo() {
+            const data = loadData();
+            document.getElementById('streak').textContent = data.stats.streak;
+        }
+        
+        function renderRewards() {
+            const data = loadData();
+            const container = document.getElementById('rewardsList');
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 获取今日是否已使用奖励
+            const todayAdjustment = data.adjustments.find(a => 
+                a.date === today && a.type === "reward_use"
+            );
+            
+            let html = '';
+            
+            data.rewards
+                .filter(reward => reward.enabled)
+                .forEach((reward, index) => {
+                    const canAfford = data.stats.totalScore >= reward.cost;
+                    const isDisabled = data.today.checkedIn || data.today.skipped || !canAfford;
+                    
+                    html += `
+                        <div class="reward-item ${isDisabled ? 'disabled' : ''}" 
+                             data-index="${index}"
+                             style="opacity: ${isDisabled ? '0.6' : '1'}; cursor: ${isDisabled ? 'not-allowed' : 'pointer'};">
+                            <div class="reward-info">
+                                <div class="reward-name">${reward.name}</div>
+                                <div style="color: var(--gray); font-size: 0.95rem; margin-top: 4px;">${reward.effect}</div>
+                            </div>
+                            <div class="reward-cost" style="color: ${canAfford ? '#f72585' : '#6c757d'};">
+                                ${reward.cost}
+                            </div>
+                        </div>
+                    `;
+                });
+            
+            container.innerHTML = html || '<div style="text-align: center; color: var(--gray); padding: 15px;">暂无可用奖励</div>';
+            
+            // 重新绑定奖励点击事件
+            document.querySelectorAll('.reward-item').forEach(el => {
+                el.addEventListener('click', function() {
+                    if (data.today.checkedIn || data.today.skipped) return;
+                    
+                    const index = parseInt(this.getAttribute('data-index'));
+                    const reward = data.rewards[index];
+                    
+                    // 显示确认对话框
+                    showRedeemModal(reward);
+                });
+            });
+        }
+        
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthYearEl = document.getElementById('monthYear');
+            grid.innerHTML = '';
+            
+            // 设置月份标题
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                              '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            monthYearEl.textContent = `${year}年${monthNames[month]}`;
+            
+            // 添加星期标签
+            ['日', '一', '二', '三', '四', '五', '六'].forEach(day => {
+                const label = document.createElement('div');
+                label.className = 'calendar-day-label';
+                label.textContent = day;
+                grid.appendChild(label);
+            });
+            
+            // 获取当月第一天是星期几
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDay = firstDay.getDay();
+            
+            // 填充上个月的空白
+            for (let i = 0; i < startDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                grid.appendChild(emptyDay);
+            }
+            
+            // 获取数据
+            const data = loadData();
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const historyByDate = {};
+            
+            // 整合历史记录和调整记录
+            [...data.history, ...data.adjustments].forEach(record => {
+                if (!historyByDate[record.date]) {
+                    historyByDate[record.date] = { records: [] };
+                }
+                historyByDate[record.date].records.push(record);
+            });
+            
+            // 填充当月日期
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateStr = date.toISOString().split('T')[0];
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = day;
+                
+                // 今天
+                if (date.toDateString() === today.toDateString()) {
+                    dayEl.classList.add('today');
+                }
+                
+                // 有记录
+                if (historyByDate[dateStr]) {
+                    const records = historyByDate[dateStr].records;
+                    
+                    // 检查是否有打卡记录
+                    const hasCheckin = records.some(r => r.checkedIn || r.type === 'checked');
+                    const hasSkipped = records.some(r => r.skipped || (r.type === 'skipped'));
+                    const hasReward = records.some(r => r.type === 'reward_use');
+                    
+                    if (hasSkipped) {
+                        dayEl.classList.add('skipped');
+                        dayEl.title = `跳过: ${records.find(r => r.skipped)?.skipReason || '使用奖励跳过'}`;
+                    } else if (hasCheckin) {
+                        dayEl.classList.add('checked');
+                        const score = records.find(r => r.checkedIn || r.type === 'checked')?.score || 0;
+                        dayEl.title = `打卡得分: ${score}分`;
+                    }
+                    
+                    if (hasReward) {
+                        dayEl.classList.add('reward');
+                        const rewardRecord = records.find(r => r.type === 'reward_use');
+                        if (rewardRecord) {
+                            dayEl.title += `\n${rewardRecord.reason}`;
+                        }
+                    }
+                }
+                
+                // 点击事件 - 显示日期详情
+                dayEl.addEventListener('click', function() {
+                    if (date > today) return; // 未来日期不显示详情
+                    
+                    const dateDetails = historyByDate[dateStr] || { records: [] };
+                    showDateDetails(dateStr, dateDetails.records);
+                });
+                
+                grid.appendChild(dayEl);
+            }
+        }
+        
+        // =============== 配置管理 ===============
+        function loadConfigUI() {
+            const data = loadData();
+            
+            // 任务配置
+            const tasksConfig = data.tasks
+                .map(task => `${task.name}|${task.desc}`)
+                .join('\n');
+            document.getElementById('tasksConfig').value = tasksConfig;
+            
+            // 积分规则
+            document.getElementById('minScoreForCheckin').value = data.scoringRules.minScoreForCheckin;
+            
+            // 奖励配置
+            const rewardsConfig = data.rewards
+                .map(reward => `${reward.name}|${reward.cost}|${reward.effect}`)
+                .join('\n');
+            document.getElementById('rewardsConfig').value = rewardsConfig;
+            
+            // 惩罚配置
+            const punishmentsConfig = data.punishments
+                .map(punishment => `${punishment.missedDays}|${punishment.points}|${punishment.desc}`)
+                .join('\n');
+            document.getElementById('punishmentsConfig').value = punishmentsConfig;
+            
+            // 版本信息
+            document.getElementById('dataVersion').textContent = data.systemMeta.systemVersion;
+            document.getElementById('taskVersion').textContent = data.taskVersion;
+            
+            // 备份信息
+            if (data.lastBackupDate) {
+                document.getElementById('lastBackup').textContent = new Date(data.lastBackupDate).toLocaleDateString();
+            }
+        }
+        
+        function saveConfig() {
+            const data = loadData();
+            const oldTaskVersion = data.taskVersion;
+            
+            // 1. 保存任务配置
+            const tasksText = document.getElementById('tasksConfig').value.trim();
+            const taskLines = tasksText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line && !line.startsWith('//'));
+            
+            if (taskLines.length > 0) {
+                const newTasks = taskLines.map(line => {
+                    const [name, desc = '完成任务'] = line.split('|').map(s => s.trim());
+                    const existing = data.tasks.find(t => t.name === name);
+                    return {
+                        name: name,
+                        desc: desc,
+                        active: true
+                    };
+                });
+                
+                // 检查任务是否真正改变
+                const oldTasks = data.tasks.map(t => `${t.name}|${t.desc}`).sort().join('|');
+                const newTasksStr = newTasks.map(t => `${t.name}|${t.desc}`).sort().join('|');
+                
+                if (oldTasks !== newTasksStr) {
+                    data.tasks = newTasks;
+                    data.taskVersion = generateTaskVersion(data.tasks);
+                    
+                    if (oldTaskVersion !== data.taskVersion) {
+                        showToast(`🎉 任务已更新！\n新版本: ${data.taskVersion}`);
+                    }
+                }
+            }
+            
+            // 2. 保存积分规则
+            const minScore = parseInt(document.getElementById('minScoreForCheckin').value) || 60;
+            data.scoringRules = {
+                totalPoints: 100, // 固定为100分
+                minScoreForCheckin: Math.max(1, Math.min(100, minScore)), // 限制在1-100之间
+                lastUpdated: new Date().toISOString().split('T')[0]
+            };
+            
+            // 3. 保存奖励配置
+            const rewardsText = document.getElementById('rewardsConfig').value.trim();
+            const rewardLines = rewardsText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line && !line.startsWith('//'));
+            
+            if (rewardLines.length > 0) {
+                data.rewards = rewardLines.map(line => {
+                    const [name, costStr, effect] = line.split('|').map(s => s.trim());
+                    const cost = parseInt(costStr) || 500;
+                    return {
+                        name: name,
+                        cost: cost,
+                        effect: effect || '兑换奖励',
+                        enabled: true
+                    };
+                });
+            }
+            
+            // 4. 保存惩罚配置
+            const punishmentsText = document.getElementById('punishmentsConfig').value.trim();
+            const punishmentLines = punishmentsText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line && !line.startsWith('//'));
+            
+            if (punishmentLines.length > 0) {
+                data.punishments = punishmentLines.map(line => {
+                    const [daysStr, pointsStr, desc] = line.split('|').map(s => s.trim());
+                    const missedDays = parseInt(daysStr) || 1;
+                    const points = parseInt(pointsStr) || -100;
+                    return {
+                        missedDays: missedDays,
+                        points: points,
+                        desc: desc || `缺席${missedDays}天`
+                    };
+                });
+            }
+            
+            // 保存数据
+            saveData(data);
+            
+            // 重新渲染
+            renderAll();
+            showToast("✅ 配置已保存！所有规则已更新。");
+        }
+        
+        // =============== UI工具函数 ===============
+        function showToast(message, duration = 3000) {
+            // 创建toast元素
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = 'rgba(67, 97, 238, 0.95)';
+            toast.style.color = 'white';
+            toast.style.padding = '12px 25px';
+            toast.style.borderRadius = '14px';
+            toast.style.fontWeight = '600';
+            toast.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+            toast.style.zIndex = '10000';
+            toast.style.textAlign = 'center';
+            toast.style.maxWidth = '80%';
+            toast.innerHTML = message;
+            
+            document.body.appendChild(toast);
+            
+            // 动画
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(20px)';
+                toast.style.transition = 'all 0.3s ease';
+            }, duration - 300);
+            
+            // 移除
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, duration);
+        }
+        
+        function showSuccessMessage(title, message = "") {
+            alert(`${title}\n\n${message}`);
+        }
+        
+        function showWarningMessage(title, message) {
+            alert(`${title}\n\n${message}`);
+        }
+        
+        function showDateDetails(dateStr, records) {
+            if (records.length === 0) {
+                alert(`📅 ${formatDateDisplay(dateStr)}\n\n今日无记录`);
+                return;
+            }
+            
+            let details = `📅 ${formatDateDisplay(dateStr)}\n\n`;
+            
+            records.forEach(record => {
+                if (record.checkedIn || record.type === 'checked') {
+                    details += `✅ 打卡成功\n`;
+                    details += `⭐ 获得 ${record.score || 0} 分\n`;
+                    details += `🎯 完成 ${record.completedTasks?.length || 0} 项任务\n\n`;
+                }
+                
+                if (record.skipped || record.type === 'skipped') {
+                    details += `⏭️ 今日跳过\n`;
+                    details += `📝 原因: ${record.skipReason || '使用奖励跳过'}\n\n`;
+                }
+                
+                if (record.type === 'reward_use') {
+                    details += `🎁 兑换奖励\n`;
+                    details += `💰 ${record.reason}\n`;
+                    details += `📊 积分变化: ${record.before} → ${record.after}\n\n`;
+                }
+            });
+            
+            alert(details);
+        }
+        
+        function formatDateDisplay(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+        
+        // =============== 模态框控制 ===============
+        function showRedeemModal(reward) {
+            const modal = document.getElementById('redeemModal');
+            document.getElementById('selectedRewardName').textContent = reward.name;
+            document.getElementById('rewardEffect').textContent = reward.effect;
+            document.getElementById('rewardCost').textContent = reward.cost;
+            
+            // 存储当前选择的奖励
+            modal.dataset.selectedReward = JSON.stringify(reward);
+            
+            modal.classList.add('active');
+        }
+        
+        function showAdjustPointsModal() {
+            const data = loadData();
+            const modal = document.getElementById('adjustPointsModal');
+            
+            document.getElementById('currentTotalPoints').textContent = data.stats.totalScore;
+            document.getElementById('pointsAdjustment').value = '';
+            document.getElementById('adjustmentReason').value = '';
+            
+            modal.classList.add('active');
+        }
+        
+        // =============== 数据管理 ===============
+        function exportData() {
+            const data = loadData();
+            const exportFileDefaultName = `growth-data-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = exportFileDefaultName;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+            
+            // 更新备份时间
+            data.lastBackupDate = new Date().toISOString();
+            saveData(data);
+            document.getElementById('lastBackup').textContent = new Date().toLocaleDateString();
+            
+            showToast(`✅ 数据已导出！\n文件: ${exportFileDefaultName}`);
+        }
+        
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        
+                        if (!importedData.tasks || !importedData.history) {
+                            throw new Error('数据格式无效');
+                        }
+                        
+                        if (confirm('确定要导入数据吗？\n这将覆盖当前所有数据！\n建议先备份当前数据。')) {
+                            // 保存当前数据备份
+                            localStorage.setItem('habitDataBackupBeforeImport', localStorage.getItem('habitData'));
+                            
+                            // 导入数据
+                            localStorage.setItem('habitData', JSON.stringify(importedData));
+                            
+                            // 重置月份视图
+                            currentViewDate = new Date();
+                            
+                            // 重新渲染
+                            renderAll();
+                            loadConfigUI();
+                            
+                            showToast('✅ 数据导入成功！\n所有历史记录已恢复。');
+                        }
+                    } catch (error) {
+                        showToast(`❌ 导入失败: ${error.message}`);
+                    }
+                };
+                reader.readAsText(file);
+                input.value = null;
+            };
+            
+            input.click();
+        }
+        
+        function resetData() {
+            if (confirm('确定要重置所有数据吗？\n这将清除所有打卡记录、积分和设置！\n⚠️ 请确保已导出重要数据 ⚠️')) {
+                localStorage.removeItem('habitData');
+                currentViewDate = new Date();
+                renderAll();
+                loadConfigUI();
+                showToast('✅ 数据已重置！\n返回默认设置。');
+            }
+        }
+        
+        // =============== 手动调整积分 ===============
+        function adjustPoints(points, reason) {
+            const data = loadData();
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 记录调整
+            const before = data.stats.totalScore;
+            data.stats.totalScore += points;
+            const after = data.stats.totalScore;
+            
+            data.adjustments.push({
+                date: today,
+                type: "manual_adjust",
+                points: points,
+                reason: reason,
+                before: before,
+                after: after
+            });
+            
+            // 保存
+            saveData(data);
+            
+            // 重新渲染
+            updateScoreDisplay();
+            renderCalendar();
+            
+            return true;
+        }
+        
+        // =============== 月份导航 ===============
+        function prevMonth() {
+            currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+            renderCalendar();
+        }
+        
+        function nextMonth() {
+            currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+            renderCalendar();
+        }
+        
+        // =============== 初始化 ===============
+        function renderAll() {
+            renderTasks();
+            updateScoreDisplay();
+            updateStreakInfo();
+            renderRewards();
+            renderCalendar();
+            checkCheckinAvailability();
+        }
+        
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. 每日重置检查
+            resetDailyTasks();
+            
+            // 2. 加载配置UI
+            loadConfigUI();
+            
+            // 3. 初始渲染
+            renderAll();
+            
+            // 4. 事件监听器
+            
+            // 设置面板切换
+            document.getElementById('toggleSettings').addEventListener('click', function() {
+                const settingsSection = document.getElementById('settingsSection');
+                const isActive = settingsSection.classList.contains('active');
+                
+                settingsSection.classList.toggle('active', !isActive);
+                this.textContent = isActive ? '展开设置' : '折叠设置';
+                this.classList.toggle('active', !isActive);
+            });
+            
+            // 保存配置
+            document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+            
+            // 打卡按钮
+            document.getElementById('checkInBtn').addEventListener('click', completeToday);
+            
+            // 兑换按钮
+            document.getElementById('useRewardBtn').addEventListener('click', function() {
+                const data = loadData();
+                const availableRewards = data.rewards.filter(r => 
+                    r.enabled && data.stats.totalScore >= r.cost
+                );
+                
+                if (availableRewards.length > 0) {
+                    showRedeemModal(availableRewards[0]);
+                }
+            });
+            
+            // 月份导航
+            document.getElementById('prevMonth').addEventListener('click', prevMonth);
+            document.getElementById('nextMonth').addEventListener('click', nextMonth);
+            
+            // 积分调整
+            document.getElementById('adjustPointsBtn').addEventListener('click', showAdjustPointsModal);
+            
+            // 模态框控制
+            document.getElementById('cancelRedeem').addEventListener('click', function() {
+                document.getElementById('redeemModal').classList.remove('active');
+            });
+            
+            document.getElementById('confirmRedeem').addEventListener('click', function() {
+                const modal = document.getElementById('redeemModal');
+                const reward = JSON.parse(modal.dataset.selectedReward);
+                
+                if (useReward(reward)) {
+                    modal.classList.remove('active');
+                }
+            });
+            
+            document.getElementById('cancelAdjustment').addEventListener('click', function() {
+                document.getElementById('adjustPointsModal').classList.remove('active');
+            });
+            
+            document.getElementById('confirmAdjustment').addEventListener('click', function() {
+                const points = parseInt(document.getElementById('pointsAdjustment').value);
+                const reason = document.getElementById('adjustmentReason').value.trim();
+                
+                if (isNaN(points)) {
+                    showToast('⚠️ 请输入有效的积分变化');
+                    return;
+                }
+                
+                if (!reason) {
+                    showToast('⚠️ 请输入调整原因');
+                    return;
+                }
+                
+                if (adjustPoints(points, reason)) {
+                    document.getElementById('adjustPointsModal').classList.remove('active');
+                    showToast(`✅ 积分已调整 ${points > 0 ? '+' : ''}${points}分\n原因: ${reason}`);
+                }
+            });
+            
+            // 模态框点击外部关闭
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+            
+            // 5. 定时检查（每30秒）
+            setInterval(() => {
+                if (resetDailyTasks()) {
+                    showToast('🌙 新的一天开始了！\n任务已重置，请开始今日成长。');
+                }
+            }, 30000);
+            
+            console.log(`✅ 成长打卡系统 v${SYSTEM_META.systemVersion} 已加载`);
+            console.log('💡 提示: 点击日期可查看历史记录详情');
+        });
+    </script>
+</body>
+</html>
